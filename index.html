@@ -83,11 +83,10 @@
       width:min(360px, 66vmin);
       height:auto;
       transform-style: preserve-3d;
-
-      /* 4D tilt */
       transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0);
 
-      filter: drop-shadow(0 38px 105px rgba(255,45,85,.28));
+      /* ✅ bỏ bóng ngoài */
+      filter: none;
     }
 
     /* subtle thickness stack */
@@ -97,7 +96,7 @@
       height:auto;
       transform-style:preserve-3d;
       transform: rotateX(var(--rx)) rotateY(var(--ry));
-      opacity:.52;
+      opacity:.45;
       filter: blur(.25px);
     }
     .layer{
@@ -108,7 +107,7 @@
       filter: saturate(1.10) contrast(1.05);
     }
 
-    /* Text (no box) */
+    /* Text */
     .love{
       position:fixed;
       inset:0;
@@ -173,12 +172,14 @@
       pointer-events:none;
       border-radius: 28px;
       padding: 10px;
+
+      /* ✅ bỏ nền/khung trắng nếu bạn muốn “trần” hoàn toàn:
+         đổi background/border/backdrop-filter thành none */
       background: rgba(255,255,255,.06);
       border: 1px solid rgba(255,255,255,.14);
       backdrop-filter: blur(10px);
-      box-shadow:
-        0 35px 120px rgba(0,0,0,.58),
-        0 0 55px rgba(255,45,85,.22);
+
+      box-shadow: 0 35px 120px rgba(0,0,0,.58);
     }
     .photo-pop img{
       display:block;
@@ -189,7 +190,7 @@
       filter: saturate(1.06) contrast(1.06);
     }
 
-    /* Click layer (catch all clicks) */
+    /* Click layer */
     .clicklayer{
       position:fixed;
       inset:0;
@@ -247,31 +248,17 @@
             <feComposite in2="SourceGraphic" operator="over"/>
           </filter>
 
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="12" result="b"/>
-            <feColorMatrix in="b" type="matrix" values="
-              1 0 0 0 0
-              0 0.2 0 0 0
-              0 0 0.3 0 0
-              0 0 0 0.55 0" result="c"/>
-            <feMerge>
-              <feMergeNode in="c"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-
-          <!-- Heart symbol (mập + lõm đỉnh rõ) -->
           <symbol id="H" viewBox="0 0 512 512">
             <path d="M256 468s-36-22-76-54C108 358 48 296 48 206 48 128 109 72 186 72c44 0 77 20 90 41 13-21 46-41 90-41 77 0 138 56 138 134 0 90-60 152-132 208-40 32-76 55-76 55z"/>
           </symbol>
         </defs>
 
-        <g filter="url(#softGlow)">
+        <!-- ✅ tắt glow ngoài: bỏ filter="url(#softGlow)" -->
+        <g>
           <use href="#H" fill="url(#base)" filter="url(#innerShadow)"></use>
           <use href="#H" fill="url(#rim)" opacity="0.92"></use>
           <use href="#H" fill="url(#gloss)" opacity="0.90"></use>
 
-          <!-- wet streak -->
           <path d="M170 160c20-52 78-80 126-58 16 7 32 22 37 39 7 24-3 50-27 62-21 11-49 6-67-13-12-13-22-22-36-33-16-12-35-8-33 3z"
             fill="rgba(255,255,255,0.20)" opacity="0.9"/>
         </g>
@@ -293,21 +280,22 @@
 
   <script>
   (() => {
-    // ===== TEXT =====
     const TEXT = "I luv youu, Pookie";
 
-    // ===== Your photos (Google Drive) =====
-    // Using direct-view endpoint. Make sure files are shared: "Anyone with the link".
+    // ✅ IMPORTANT:
+    // - Drive thumbnail đôi khi vẫn bị chặn khi deploy public.
+    // - Ảnh GitHub phải là DIRECT image link (user-images...), không phải link issue page.
     const PHOTOS = [
-      "https://drive.google.com/thumbnail?id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5&sz=w1600"
-      "https://github.com/baolongcute/pookie/issues/1"
+      "https://drive.google.com/thumbnail?id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5&sz=w1600",
+      // 👇 THAY DÒNG NÀY bằng direct image link (ví dụ user-images...jpg/png)
+      "https://picsum.photos/seed/pookie/900/900"
     ];
     let photoIndex = 0;
 
-    // ===== PARTICLES: clean mode =====
-    let EMIT_RATE = 36;        // hearts/sec (gọn)
-    let BURST_1 = 80;          // first click burst
-    let BURST_2 = 120;         // later click burst
+    // particles (gọn)
+    let EMIT_RATE = 36;
+    let BURST_1 = 80;
+    let BURST_2 = 120;
     const MAX_PARTICLES = 850;
 
     const GRAVITY = 760;
@@ -331,12 +319,11 @@
     let running=false;
     let tPrev=performance.now();
     let emitAcc=0;
-    let totalSpawned=0;
 
     const particles = new Array(MAX_PARTICLES);
     let pCount=0;
 
-    // ===== Love sound (no mp3) =====
+    // sound
     let audioCtx = null;
     function loveChime(){
       if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -345,10 +332,10 @@
       const master = audioCtx.createGain();
       master.gain.setValueAtTime(0.0001, t0);
       master.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
-      master.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.25);
+      master.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.10);
       master.connect(audioCtx.destination);
 
-      const freqs = [523.25, 659.25, 783.99]; // C5 E5 G5
+      const freqs = [523.25, 659.25, 783.99];
       freqs.forEach((f, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -358,7 +345,7 @@
 
         gain.gain.setValueAtTime(0.0001, t0 + i*0.06);
         gain.gain.exponentialRampToValueAtTime(0.18, t0 + i*0.06 + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.06 + 0.50);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.06 + 0.48);
 
         filt.type = "lowpass";
         filt.frequency.setValueAtTime(2400, t0);
@@ -368,28 +355,6 @@
         osc.start(t0 + i*0.06);
         osc.stop(t0 + i*0.06 + 0.55);
       });
-
-      // tiny sparkle
-      const dur = 0.14;
-      const bufferSize = Math.floor(audioCtx.sampleRate * dur);
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufferSize;i++){
-        data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2);
-      }
-      const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-
-      const ng = audioCtx.createGain();
-      ng.gain.setValueAtTime(0.0001, t0);
-      ng.gain.exponentialRampToValueAtTime(0.06, t0 + 0.01);
-      ng.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-
-      const hp = audioCtx.createBiquadFilter();
-      hp.type = "highpass"; hp.frequency.value = 2600;
-
-      noise.connect(hp); hp.connect(ng); ng.connect(master);
-      noise.start(t0 + 0.02);
-      noise.stop(t0 + 0.02 + dur);
     }
 
     function resize(){
@@ -405,7 +370,7 @@
     window.addEventListener("resize", resize);
     resize();
 
-    // ===== Heart sprite for particles =====
+    // heart sprite
     const sprites=[];
     function makeHeartSprite(size){
       const c=document.createElement("canvas");
@@ -424,8 +389,8 @@
       grad.addColorStop(0.55,"rgba(255,45,85,0.95)");
       grad.addColorStop(1,"rgba(165,0,40,0.95)");
 
-      g.shadowColor="rgba(0,0,0,.22)";
-      g.shadowBlur=7; g.shadowOffsetY=5;
+      g.shadowColor="rgba(0,0,0,.18)";
+      g.shadowBlur=6; g.shadowOffsetY=4;
 
       g.beginPath();
       g.moveTo(16,29);
@@ -449,7 +414,6 @@
     }
     [18,22,26,30].forEach(sz=>sprites.push(makeHeartSprite(sz)));
 
-    // ===== particles =====
     function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
     function spawnOne(x,y){
@@ -471,12 +435,10 @@
       p.sprite=sprites[(Math.random()*sprites.length)|0];
 
       if(pCount<MAX_PARTICLES) pCount++;
-      totalSpawned++;
     }
 
     function burst(x,y,n){ for(let i=0;i<n;i++) spawnOne(x,y); }
 
-    // ===== typewriter =====
     async function typewriter(text, ms=34){
       typed.textContent="";
       for(let i=0;i<text.length;i++){
@@ -485,22 +447,19 @@
       }
     }
 
-    // ===== stronger 4D tilt (smooth) =====
+    // 4D tilt (strong + smooth)
     const root = document.documentElement;
     let targetRx = 10, targetRy = -12, curRx = 10, curRy = -12;
     let targetLx = 35, targetLy = 22, curLx = 35, curLy = 22;
-
-    function lerp(a,b,t){ return a + (b-a)*t; }
+    const lerp = (a,b,t)=>a+(b-a)*t;
 
     window.addEventListener("pointermove", (ev)=>{
-      const nx = (ev.clientX / W) * 2 - 1; // -1..1
+      const nx = (ev.clientX / W) * 2 - 1;
       const ny = (ev.clientY / H) * 2 - 1;
 
-      // stronger tilt
       targetRx = 10 + (-ny) * 18;
       targetRy = -12 + (nx) * 22;
 
-      // stronger gloss travel
       targetLx = 35 + nx * 18;
       targetLy = 22 + ny * 14;
     }, {passive:true});
@@ -517,7 +476,7 @@
       root.style.setProperty("--ly", curLy.toFixed(2) + "%");
     }
 
-    // ===== render loop =====
+    // render loop
     function step(now){
       const dt=Math.min(0.035, (now-tPrev)/1000);
       tPrev=now;
@@ -534,7 +493,6 @@
 
       ctx.clearRect(0,0,W,H);
 
-      // vignette
       const vg=ctx.createRadialGradient(W*0.5,H*0.45,80,W*0.5,H*0.5,Math.max(W,H)*0.88);
       vg.addColorStop(0,"rgba(0,0,0,0)");
       vg.addColorStop(1,"rgba(0,0,0,.26)");
@@ -578,37 +536,30 @@
     }
     requestAnimationFrame(step);
 
-    // ===== interaction =====
+    // interaction
     let first=false;
 
-    // 3-click detector
+    // triple-click detector
     let clickCount = 0;
     let clickTimer = null;
 
-    function togglePhoto(){
-      // next photo
+    function showNextPhoto(){
       photoIndex = (photoIndex + 1) % PHOTOS.length;
       userPhoto.src = PHOTOS[photoIndex];
-
-      // show overlay
       photoPop.classList.add("active");
-
-      // auto-hide after 3.5s (optional; you can remove)
       setTimeout(() => photoPop.classList.remove("active"), 3500);
     }
 
     function activate(e){
       loveChime();
 
-      // detect triple click within 900ms
       clickCount++;
       clearTimeout(clickTimer);
       clickTimer = setTimeout(() => (clickCount = 0), 900);
 
       if(clickCount === 3){
         clickCount = 0;
-        togglePhoto();
-
+        showNextPhoto();
         const x=e?.clientX ?? W*0.5;
         const y=e?.clientY ?? H*0.5;
         burst(x, y, 120);
@@ -636,9 +587,9 @@
       running=false; first=false;
       love.classList.remove("active");
       typed.textContent="";
-      pCount=0; totalSpawned=0; emitAcc=0;
+      pCount=0; emitAcc=0;
       photoPop.classList.remove("active");
-      clickCount = 0;
+      clickCount=0;
     }
 
     clicklayer.addEventListener("click", activate);
@@ -648,10 +599,12 @@
       if(k === "r") reset();
       if(k === "escape") photoPop.classList.remove("active");
     });
+
+    // ✅ giúp phát hiện lỗi ảnh (không làm click chết)
+    userPhoto.addEventListener("error", () => {
+      console.warn("Photo failed to load. If using GitHub, use a DIRECT image URL (user-images...).");
+    });
   })();
   </script>
 </body>
 </html>
-
-
-
