@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Plush 4D Heart — Pookie</title>
+
+  <style>
+    :root{
+      --bg0:#05060d; --bg1:#0b1020; --bg2:#1a0b18;
+      --txt:#fff;
+
+      /* updated by JS for 4D tilt + gloss */
+      --rx: 10deg;
+      --ry: -12deg;
+      --lx: 35%;
+      --ly: 22%;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 800px at 50% 30%, rgba(112,98,255,.18) 0%, transparent 60%),
+        radial-gradient(900px 700px at 70% 60%, rgba(255,45,85,.16) 0%, transparent 62%),
+        radial-gradient(900px 700px at 30% 70%, rgba(0,255,209,.08) 0%, transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2) 55%, var(--bg0));
+      color:var(--txt);
+      user-select:none;
+    }
+
+    /* Particle canvas */
+    #fx{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      z-index:1;
+    }
+
+    /* Center stage */
+    .stage{
+      position:fixed;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .aura{
+      position:absolute;
+      width:min(560px, 84vmin);
+      height:min(560px, 84vmin);
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(255,45,85,.22), rgba(255,45,85,0) 62%);
+      filter: blur(12px);
+      opacity:.95;
+      animation: float 7s ease-in-out infinite;
+    }
+    @keyframes float{
+      0%,100%{ transform: translateY(10px) scale(1); }
+      50%{ transform: translateY(-14px) scale(1.03); }
+    }
+
+    /* Heart holder */
+    .heart-wrap{
+      position:relative;
+      width:min(460px, 78vmin);
+      height:min(460px, 78vmin);
+      display:grid;
+      place-items:center;
+      perspective: 1400px;
+      transform-style:preserve-3d;
+    }
+
+    /* Main heart */
+    .heart{
+      width:min(360px, 66vmin);
+      height:auto;
+      transform-style: preserve-3d;
+
+      /* 4D tilt */
+      transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0);
+
+      filter: drop-shadow(0 38px 105px rgba(255,45,85,.28));
+    }
+
+    /* subtle thickness stack */
+    .heart-stack{
+      position:absolute;
+      width:min(360px, 66vmin);
+      height:auto;
+      transform-style:preserve-3d;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      opacity:.52;
+      filter: blur(.25px);
+    }
+    .layer{
+      position:absolute;
+      inset:0;
+      transform: translateZ(var(--z));
+      opacity: var(--o);
+      filter: saturate(1.10) contrast(1.05);
+    }
+
+    /* Text (no box) */
+    .love{
+      position:fixed;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index:5;
+      pointer-events:none;
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .love.active{
+      opacity:1;
+      transform: translateY(0);
+    }
+    .love-line{
+      font-weight: 950;
+      font-size: clamp(34px, 6vw, 78px);
+      letter-spacing: .2px;
+      text-align:center;
+
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.72));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+
+      text-shadow:
+        0 12px 40px rgba(0,0,0,.38),
+        0 0 42px rgba(255,45,85,.22);
+      position:relative;
+      padding: 0 18px;
+    }
+    .love-line::after{
+      content:"";
+      display:inline-block;
+      width: 10px;
+      height: 1em;
+      border-left: 3px solid rgba(255,255,255,.85);
+      margin-left: 10px;
+      transform: translateY(6px);
+      animation: blink .9s steps(2) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Photo overlay */
+    .photo-pop{
+      position:fixed;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index:6;
+      pointer-events:none;
+      opacity:0;
+      transform: scale(.92);
+      transition: opacity .32s ease, transform .32s ease;
+    }
+    .photo-pop.active{
+      opacity:1;
+      transform: scale(1);
+    }
+    .photo-pop .frame{
+      pointer-events:none;
+      border-radius: 28px;
+      padding: 10px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 35px 120px rgba(0,0,0,.58),
+        0 0 55px rgba(255,45,85,.22);
+    }
+    .photo-pop img{
+      display:block;
+      width: min(360px, 74vw);
+      height: min(360px, 74vw);
+      object-fit: cover;
+      border-radius: 22px;
+      filter: saturate(1.06) contrast(1.06);
+    }
+
+    /* Click layer (catch all clicks) */
+    .clicklayer{
+      position:fixed;
+      inset:0;
+      z-index:10;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="fx"></canvas>
+
+  <div class="stage" aria-hidden="true">
+    <div class="aura"></div>
+
+    <div class="heart-wrap">
+      <div class="heart-stack">
+        <svg class="layer" style="--z:-28px; --o:.14" viewBox="0 0 512 512"><use href="#H"></use></svg>
+        <svg class="layer" style="--z:-20px; --o:.16" viewBox="0 0 512 512"><use href="#H"></use></svg>
+        <svg class="layer" style="--z:-12px; --o:.18" viewBox="0 0 512 512"><use href="#H"></use></svg>
+        <svg class="layer" style="--z:-6px;  --o:.20" viewBox="0 0 512 512"><use href="#H"></use></svg>
+      </div>
+
+      <svg class="heart" viewBox="0 0 512 512" aria-label="Plush glossy heart">
+        <defs>
+          <radialGradient id="base" cx="35%" cy="22%" r="78%">
+            <stop offset="0" stop-color="#ff9ab0"/>
+            <stop offset="0.32" stop-color="#ff3a63"/>
+            <stop offset="0.72" stop-color="#ff1f4b"/>
+            <stop offset="1" stop-color="#7a001c"/>
+          </radialGradient>
+
+          <radialGradient id="rim" cx="50%" cy="72%" r="90%">
+            <stop offset="0" stop-color="rgba(0,0,0,0)"/>
+            <stop offset="0.72" stop-color="rgba(0,0,0,0.10)"/>
+            <stop offset="1" stop-color="rgba(0,0,0,0.30)"/>
+          </radialGradient>
+
+          <radialGradient id="gloss" cx="var(--lx)" cy="var(--ly)" r="58%">
+            <stop offset="0" stop-color="rgba(255,255,255,0.78)"/>
+            <stop offset="0.22" stop-color="rgba(255,255,255,0.30)"/>
+            <stop offset="0.55" stop-color="rgba(255,255,255,0.09)"/>
+            <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+          </radialGradient>
+
+          <filter id="innerShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feOffset dx="0" dy="12" />
+            <feGaussianBlur stdDeviation="12" result="blur"/>
+            <feComposite in="blur" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="inner"/>
+            <feColorMatrix in="inner" type="matrix" values="
+              0 0 0 0 0
+              0 0 0 0 0
+              0 0 0 0 0
+              0 0 0 0.58 0" />
+            <feComposite in2="SourceGraphic" operator="over"/>
+          </filter>
+
+          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="12" result="b"/>
+            <feColorMatrix in="b" type="matrix" values="
+              1 0 0 0 0
+              0 0.2 0 0 0
+              0 0 0.3 0 0
+              0 0 0 0.55 0" result="c"/>
+            <feMerge>
+              <feMergeNode in="c"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+
+          <!-- Heart symbol (mập + lõm đỉnh rõ) -->
+          <symbol id="H" viewBox="0 0 512 512">
+            <path d="M256 468s-36-22-76-54C108 358 48 296 48 206 48 128 109 72 186 72c44 0 77 20 90 41 13-21 46-41 90-41 77 0 138 56 138 134 0 90-60 152-132 208-40 32-76 55-76 55z"/>
+          </symbol>
+        </defs>
+
+        <g filter="url(#softGlow)">
+          <use href="#H" fill="url(#base)" filter="url(#innerShadow)"></use>
+          <use href="#H" fill="url(#rim)" opacity="0.92"></use>
+          <use href="#H" fill="url(#gloss)" opacity="0.90"></use>
+
+          <!-- wet streak -->
+          <path d="M170 160c20-52 78-80 126-58 16 7 32 22 37 39 7 24-3 50-27 62-21 11-49 6-67-13-12-13-22-22-36-33-16-12-35-8-33 3z"
+            fill="rgba(255,255,255,0.20)" opacity="0.9"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="love" id="love">
+    <div class="love-line" id="typed"></div>
+  </div>
+
+  <div class="photo-pop" id="photoPop" aria-hidden="true">
+    <div class="frame">
+      <img id="userPhoto" alt="Your photo" />
+    </div>
+  </div>
+
+  <div class="clicklayer" id="clicklayer" title="Click"></div>
+
+  <script>
+  (() => {
+    // ===== TEXT =====
+    const TEXT = "I luv youu, Pookie";
+
+    // ===== Your photos (Google Drive) =====
+    // Using direct-view endpoint. Make sure files are shared: "Anyone with the link".
+    const PHOTOS = [
+      "https://drive.google.com/uc?export=view&id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5"
+    ];
+    let photoIndex = 0;
+
+    // ===== PARTICLES: clean mode =====
+    let EMIT_RATE = 36;        // hearts/sec (gọn)
+    let BURST_1 = 80;          // first click burst
+    let BURST_2 = 120;         // later click burst
+    const MAX_PARTICLES = 850;
+
+    const GRAVITY = 760;
+    const DRAG = 0.988;
+    const WIND = 10;
+
+    const canvas = document.getElementById("fx");
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    const love = document.getElementById("love");
+    const typed = document.getElementById("typed");
+    const clicklayer = document.getElementById("clicklayer");
+
+    const photoPop = document.getElementById("photoPop");
+    const userPhoto = document.getElementById("userPhoto");
+
+    // init photo
+    userPhoto.src = PHOTOS[0];
+
+    let DPR=1, W=0, H=0;
+    let running=false;
+    let tPrev=performance.now();
+    let emitAcc=0;
+    let totalSpawned=0;
+
+    const particles = new Array(MAX_PARTICLES);
+    let pCount=0;
+
+    // ===== Love sound (no mp3) =====
+    let audioCtx = null;
+    function loveChime(){
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+
+      const master = audioCtx.createGain();
+      master.gain.setValueAtTime(0.0001, t0);
+      master.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+      master.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.25);
+      master.connect(audioCtx.destination);
+
+      const freqs = [523.25, 659.25, 783.99]; // C5 E5 G5
+      freqs.forEach((f, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filt = audioCtx.createBiquadFilter();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, t0 + i*0.06);
+
+        gain.gain.setValueAtTime(0.0001, t0 + i*0.06);
+        gain.gain.exponentialRampToValueAtTime(0.18, t0 + i*0.06 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.06 + 0.50);
+
+        filt.type = "lowpass";
+        filt.frequency.setValueAtTime(2400, t0);
+        filt.Q.value = 0.75;
+
+        osc.connect(filt); filt.connect(gain); gain.connect(master);
+        osc.start(t0 + i*0.06);
+        osc.stop(t0 + i*0.06 + 0.55);
+      });
+
+      // tiny sparkle
+      const dur = 0.14;
+      const bufferSize = Math.floor(audioCtx.sampleRate * dur);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++){
+        data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2);
+      }
+      const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+
+      const ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(0.0001, t0);
+      ng.gain.exponentialRampToValueAtTime(0.06, t0 + 0.01);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+      const hp = audioCtx.createBiquadFilter();
+      hp.type = "highpass"; hp.frequency.value = 2600;
+
+      noise.connect(hp); hp.connect(ng); ng.connect(master);
+      noise.start(t0 + 0.02);
+      noise.stop(t0 + 0.02 + dur);
+    }
+
+    function resize(){
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width  = Math.floor(window.innerWidth * DPR);
+      canvas.height = Math.floor(window.innerHeight * DPR);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(DPR, DPR);
+      W = window.innerWidth; H = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    // ===== Heart sprite for particles =====
+    const sprites=[];
+    function makeHeartSprite(size){
+      const c=document.createElement("canvas");
+      c.width=c.height=size;
+      const g=c.getContext("2d");
+      g.clearRect(0,0,size,size);
+      const cx=size/2, cy=size/2;
+      const s=size/36;
+      g.save();
+      g.translate(cx,cy);
+      g.scale(s,s);
+      g.translate(-16,-16);
+
+      const grad=g.createLinearGradient(6,0,26,32);
+      grad.addColorStop(0,"rgba(255,140,170,0.95)");
+      grad.addColorStop(0.55,"rgba(255,45,85,0.95)");
+      grad.addColorStop(1,"rgba(165,0,40,0.95)");
+
+      g.shadowColor="rgba(0,0,0,.22)";
+      g.shadowBlur=7; g.shadowOffsetY=5;
+
+      g.beginPath();
+      g.moveTo(16,29);
+      g.bezierCurveTo(6,22,4,14,9,10);
+      g.bezierCurveTo(13,6,18,8,16,13);
+      g.bezierCurveTo(14,8,19,6,23,10);
+      g.bezierCurveTo(28,14,26,22,16,29);
+      g.closePath();
+      g.fillStyle=grad; g.fill();
+
+      g.shadowColor="transparent";
+      const h=g.createRadialGradient(14,10,0,14,10,12);
+      h.addColorStop(0,"rgba(255,255,255,.5)");
+      h.addColorStop(1,"rgba(255,255,255,0)");
+      g.fillStyle=h;
+      g.beginPath();
+      g.ellipse(13,11,6,5,-0.6,0,Math.PI*2);
+      g.fill();
+      g.restore();
+      return c;
+    }
+    [18,22,26,30].forEach(sz=>sprites.push(makeHeartSprite(sz)));
+
+    // ===== particles =====
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+    function spawnOne(x,y){
+      const p = (pCount<MAX_PARTICLES) ? (particles[pCount]={}) : particles[(Math.random()*MAX_PARTICLES)|0];
+      const angle = (-Math.PI/2) + (Math.random()-0.5)*0.80;
+      const speed = 210 + Math.random()*300;
+
+      p.x=x; p.y=y;
+      p.vx=Math.cos(angle)*speed + (Math.random()-0.5)*70;
+      p.vy=Math.sin(angle)*speed - Math.random()*110;
+
+      p.rot=Math.random()*Math.PI*2;
+      p.vr=(Math.random()-0.5)*3.8;
+
+      p.size=0.78 + Math.random()*1.05;
+      p.life=0;
+      p.ttl=1.15 + Math.random()*1.05;
+      p.alpha=0.95;
+      p.sprite=sprites[(Math.random()*sprites.length)|0];
+
+      if(pCount<MAX_PARTICLES) pCount++;
+      totalSpawned++;
+    }
+
+    function burst(x,y,n){ for(let i=0;i<n;i++) spawnOne(x,y); }
+
+    // ===== typewriter =====
+    async function typewriter(text, ms=34){
+      typed.textContent="";
+      for(let i=0;i<text.length;i++){
+        typed.textContent += text[i];
+        await new Promise(r=>setTimeout(r,ms));
+      }
+    }
+
+    // ===== stronger 4D tilt (smooth) =====
+    const root = document.documentElement;
+    let targetRx = 10, targetRy = -12, curRx = 10, curRy = -12;
+    let targetLx = 35, targetLy = 22, curLx = 35, curLy = 22;
+
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    window.addEventListener("pointermove", (ev)=>{
+      const nx = (ev.clientX / W) * 2 - 1; // -1..1
+      const ny = (ev.clientY / H) * 2 - 1;
+
+      // stronger tilt
+      targetRx = 10 + (-ny) * 18;
+      targetRy = -12 + (nx) * 22;
+
+      // stronger gloss travel
+      targetLx = 35 + nx * 18;
+      targetLy = 22 + ny * 14;
+    }, {passive:true});
+
+    function applyTilt(){
+      curRx = lerp(curRx, targetRx, 0.14);
+      curRy = lerp(curRy, targetRy, 0.14);
+      curLx = lerp(curLx, targetLx, 0.18);
+      curLy = lerp(curLy, targetLy, 0.18);
+
+      root.style.setProperty("--rx", curRx.toFixed(2) + "deg");
+      root.style.setProperty("--ry", curRy.toFixed(2) + "deg");
+      root.style.setProperty("--lx", curLx.toFixed(2) + "%");
+      root.style.setProperty("--ly", curLy.toFixed(2) + "%");
+    }
+
+    // ===== render loop =====
+    function step(now){
+      const dt=Math.min(0.035, (now-tPrev)/1000);
+      tPrev=now;
+
+      if(running){
+        emitAcc += EMIT_RATE*dt;
+        const n=Math.floor(emitAcc); emitAcc -= n;
+
+        const cx=W*0.5, cy=H*0.49;
+        for(let i=0;i<n;i++){
+          spawnOne(cx+(Math.random()-0.5)*22, cy+(Math.random()-0.5)*16);
+        }
+      }
+
+      ctx.clearRect(0,0,W,H);
+
+      // vignette
+      const vg=ctx.createRadialGradient(W*0.5,H*0.45,80,W*0.5,H*0.5,Math.max(W,H)*0.88);
+      vg.addColorStop(0,"rgba(0,0,0,0)");
+      vg.addColorStop(1,"rgba(0,0,0,.26)");
+      ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+
+      for(let i=0;i<pCount;i++){
+        const p=particles[i];
+        p.life += dt;
+        const t=p.life/p.ttl;
+
+        p.vx += (WIND*(0.2+Math.random()*0.35))*dt;
+        p.vy += GRAVITY*dt;
+        p.vx *= DRAG; p.vy *= DRAG;
+
+        p.x += p.vx*dt;
+        p.y += p.vy*dt;
+        p.rot += p.vr*dt;
+
+        p.alpha = clamp(1-t,0,1);
+
+        if(p.alpha>0.01 && p.y < H+140){
+          ctx.save();
+          ctx.globalAlpha=p.alpha;
+          ctx.translate(p.x,p.y);
+          ctx.rotate(p.rot);
+          const s=p.sprite;
+          const w=s.width*p.size;
+          const h=s.height*p.size;
+          ctx.drawImage(s,-w/2,-h/2,w,h);
+          ctx.restore();
+        } else {
+          const last=pCount-1;
+          particles[i]=particles[last];
+          particles[last]=p;
+          pCount--; i--;
+        }
+      }
+
+      applyTilt();
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    // ===== interaction =====
+    let first=false;
+
+    // 3-click detector
+    let clickCount = 0;
+    let clickTimer = null;
+
+    function togglePhoto(){
+      // next photo
+      photoIndex = (photoIndex + 1) % PHOTOS.length;
+      userPhoto.src = PHOTOS[photoIndex];
+
+      // show overlay
+      photoPop.classList.add("active");
+
+      // auto-hide after 3.5s (optional; you can remove)
+      setTimeout(() => photoPop.classList.remove("active"), 3500);
+    }
+
+    function activate(e){
+      loveChime();
+
+      // detect triple click within 900ms
+      clickCount++;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => (clickCount = 0), 900);
+
+      if(clickCount === 3){
+        clickCount = 0;
+        togglePhoto();
+
+        const x=e?.clientX ?? W*0.5;
+        const y=e?.clientY ?? H*0.5;
+        burst(x, y, 120);
+        return;
+      }
+
+      const x=e?.clientX ?? W*0.5;
+      const y=e?.clientY ?? H*0.5;
+
+      if(!first){
+        first=true;
+        running=true;
+
+        love.classList.add("active");
+        typewriter(TEXT, 32);
+
+        burst(x,y,BURST_1);
+        burst(W*0.5,H*0.49,BURST_1+30);
+      } else {
+        burst(x,y,BURST_2);
+      }
+    }
+
+    function reset(){
+      running=false; first=false;
+      love.classList.remove("active");
+      typed.textContent="";
+      pCount=0; totalSpawned=0; emitAcc=0;
+      photoPop.classList.remove("active");
+      clickCount = 0;
+    }
+
+    clicklayer.addEventListener("click", activate);
+
+    window.addEventListener("keydown", (ev)=>{
+      const k = ev.key.toLowerCase();
+      if(k === "r") reset();
+      if(k === "escape") photoPop.classList.remove("active");
+    });
+  })();
+  </script>
+</body>
+</html>
