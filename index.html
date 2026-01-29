@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Plush 4D Heart — Pookie</title>
+  <title>Plush 4D Heart — No Shadow</title>
 
   <style>
     :root{
@@ -25,8 +25,8 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       background:
         radial-gradient(1200px 800px at 50% 30%, rgba(112,98,255,.18) 0%, transparent 60%),
-        radial-gradient(900px 700px at 70% 60%, rgba(255,45,85,.16) 0%, transparent 62%),
-        radial-gradient(900px 700px at 30% 70%, rgba(0,255,209,.08) 0%, transparent 60%),
+        radial-gradient(900px 700px at 70% 60%, rgba(255,45,85,.14) 0%, transparent 62%),
+        radial-gradient(900px 700px at 30% 70%, rgba(0,255,209,.07) 0%, transparent 60%),
         linear-gradient(180deg, var(--bg1), var(--bg2) 55%, var(--bg0));
       color:var(--txt);
       user-select:none;
@@ -42,7 +42,7 @@
       z-index:1;
     }
 
-    /* Center stage */
+    /* Stage */
     .stage{
       position:fixed;
       inset:0;
@@ -52,14 +52,15 @@
       pointer-events:none;
     }
 
+    /* OPTIONAL: nếu bạn cũng muốn tắt glow nền tròn, set display:none */
     .aura{
       position:absolute;
       width:min(560px, 84vmin);
       height:min(560px, 84vmin);
       border-radius:50%;
-      background: radial-gradient(circle, rgba(255,45,85,.22), rgba(255,45,85,0) 62%);
+      background: radial-gradient(circle, rgba(255,45,85,.16), rgba(255,45,85,0) 62%);
       filter: blur(12px);
-      opacity:.95;
+      opacity:.85;
       animation: float 7s ease-in-out infinite;
     }
     @keyframes float{
@@ -67,7 +68,6 @@
       50%{ transform: translateY(-14px) scale(1.03); }
     }
 
-    /* Heart holder */
     .heart-wrap{
       position:relative;
       width:min(460px, 78vmin);
@@ -78,33 +78,31 @@
       transform-style:preserve-3d;
     }
 
-    /* Main heart */
+    /* Main heart (NO SHADOW) */
     .heart{
       width:min(360px, 66vmin);
       height:auto;
       transform-style: preserve-3d;
-      transform: rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0);
-
-      /* ✅ bỏ bóng ngoài */
-      filter: none;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      filter:none !important; /* ✅ no drop-shadow */
     }
 
-    /* subtle thickness stack */
+    /* Depth stack (NO SHADOW) */
     .heart-stack{
       position:absolute;
       width:min(360px, 66vmin);
       height:auto;
       transform-style:preserve-3d;
       transform: rotateX(var(--rx)) rotateY(var(--ry));
-      opacity:.45;
-      filter: blur(.25px);
+      opacity:.32;
+      filter:none !important; /* ✅ no blur/shadow */
     }
     .layer{
       position:absolute;
       inset:0;
       transform: translateZ(var(--z));
       opacity: var(--o);
-      filter: saturate(1.10) contrast(1.05);
+      filter: saturate(1.08) contrast(1.03);
     }
 
     /* Text */
@@ -128,6 +126,7 @@
       font-size: clamp(34px, 6vw, 78px);
       letter-spacing: .2px;
       text-align:center;
+      padding: 0 18px;
 
       background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.72));
       -webkit-background-clip: text;
@@ -135,10 +134,9 @@
       color: transparent;
 
       text-shadow:
-        0 12px 40px rgba(0,0,0,.38),
-        0 0 42px rgba(255,45,85,.22);
+        0 12px 40px rgba(0,0,0,.35),
+        0 0 36px rgba(255,45,85,.18);
       position:relative;
-      padding: 0 18px;
     }
     .love-line::after{
       content:"";
@@ -152,7 +150,7 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Photo overlay */
+    /* Photo overlay (bạn có thể tắt khung nền ở đây) */
     .photo-pop{
       position:fixed;
       inset:0;
@@ -169,17 +167,14 @@
       transform: scale(1);
     }
     .photo-pop .frame{
-      pointer-events:none;
       border-radius: 28px;
       padding: 10px;
 
-      /* ✅ bỏ nền/khung trắng nếu bạn muốn “trần” hoàn toàn:
-         đổi background/border/backdrop-filter thành none */
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.14);
-      backdrop-filter: blur(10px);
-
-      box-shadow: 0 35px 120px rgba(0,0,0,.58);
+      /* ✅ bỏ khung/nền trắng: set transparent + border none */
+      background: transparent;
+      border: none;
+      backdrop-filter: none;
+      box-shadow: none;
     }
     .photo-pop img{
       display:block;
@@ -190,7 +185,6 @@
       filter: saturate(1.06) contrast(1.06);
     }
 
-    /* Click layer */
     .clicklayer{
       position:fixed;
       inset:0;
@@ -207,14 +201,14 @@
     <div class="aura"></div>
 
     <div class="heart-wrap">
-      <div class="heart-stack">
-        <svg class="layer" style="--z:-28px; --o:.14" viewBox="0 0 512 512"><use href="#H"></use></svg>
-        <svg class="layer" style="--z:-20px; --o:.16" viewBox="0 0 512 512"><use href="#H"></use></svg>
-        <svg class="layer" style="--z:-12px; --o:.18" viewBox="0 0 512 512"><use href="#H"></use></svg>
-        <svg class="layer" style="--z:-6px;  --o:.20" viewBox="0 0 512 512"><use href="#H"></use></svg>
+      <!-- subtle thickness stack (no shadow) -->
+      <div class="heart-stack" aria-hidden="true">
+        <svg class="layer" style="--z:-22px; --o:.10" viewBox="0 0 512 512"><use href="#H"></use></svg>
+        <svg class="layer" style="--z:-14px; --o:.12" viewBox="0 0 512 512"><use href="#H"></use></svg>
+        <svg class="layer" style="--z:-8px;  --o:.14" viewBox="0 0 512 512"><use href="#H"></use></svg>
       </div>
 
-      <svg class="heart" viewBox="0 0 512 512" aria-label="Plush glossy heart">
+      <svg class="heart" viewBox="0 0 512 512" aria-label="Plush glossy heart (no shadow)">
         <defs>
           <radialGradient id="base" cx="35%" cy="22%" r="78%">
             <stop offset="0" stop-color="#ff9ab0"/>
@@ -223,44 +217,28 @@
             <stop offset="1" stop-color="#7a001c"/>
           </radialGradient>
 
-          <radialGradient id="rim" cx="50%" cy="72%" r="90%">
-            <stop offset="0" stop-color="rgba(0,0,0,0)"/>
-            <stop offset="0.72" stop-color="rgba(0,0,0,0.10)"/>
-            <stop offset="1" stop-color="rgba(0,0,0,0.30)"/>
-          </radialGradient>
-
-          <radialGradient id="gloss" cx="var(--lx)" cy="var(--ly)" r="58%">
+          <!-- gloss highlight follows pointer -->
+          <radialGradient id="gloss" cx="var(--lx)" cy="var(--ly)" r="60%">
             <stop offset="0" stop-color="rgba(255,255,255,0.78)"/>
             <stop offset="0.22" stop-color="rgba(255,255,255,0.30)"/>
             <stop offset="0.55" stop-color="rgba(255,255,255,0.09)"/>
             <stop offset="1" stop-color="rgba(255,255,255,0)"/>
           </radialGradient>
 
-          <filter id="innerShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feOffset dx="0" dy="12" />
-            <feGaussianBlur stdDeviation="12" result="blur"/>
-            <feComposite in="blur" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="inner"/>
-            <feColorMatrix in="inner" type="matrix" values="
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 0 0
-              0 0 0 0.58 0" />
-            <feComposite in2="SourceGraphic" operator="over"/>
-          </filter>
-
+          <!-- Heart symbol -->
           <symbol id="H" viewBox="0 0 512 512">
             <path d="M256 468s-36-22-76-54C108 358 48 296 48 206 48 128 109 72 186 72c44 0 77 20 90 41 13-21 46-41 90-41 77 0 138 56 138 134 0 90-60 152-132 208-40 32-76 55-76 55z"/>
           </symbol>
         </defs>
 
-        <!-- ✅ tắt glow ngoài: bỏ filter="url(#softGlow)" -->
+        <!-- ✅ NO glow, NO innerShadow, NO rim -->
         <g>
-          <use href="#H" fill="url(#base)" filter="url(#innerShadow)"></use>
-          <use href="#H" fill="url(#rim)" opacity="0.92"></use>
-          <use href="#H" fill="url(#gloss)" opacity="0.90"></use>
+          <use href="#H" fill="url(#base)"></use>
+          <use href="#H" fill="url(#gloss)" opacity="0.92"></use>
 
+          <!-- wet streak -->
           <path d="M170 160c20-52 78-80 126-58 16 7 32 22 37 39 7 24-3 50-27 62-21 11-49 6-67-13-12-13-22-22-36-33-16-12-35-8-33 3z"
-            fill="rgba(255,255,255,0.20)" opacity="0.9"/>
+            fill="rgba(255,255,255,0.18)" opacity="0.9"/>
         </g>
       </svg>
     </div>
@@ -282,21 +260,19 @@
   (() => {
     const TEXT = "I luv youu, Pookie";
 
-    // ✅ IMPORTANT:
-    // - Drive thumbnail đôi khi vẫn bị chặn khi deploy public.
-    // - Ảnh GitHub phải là DIRECT image link (user-images...), không phải link issue page.
+    // ✅ Ảnh của bạn (Drive thumbnail). Nhớ Share: Anyone with the link
+    // Nếu GitHub Pages vẫn không hiện vì Drive chặn hotlink:
+    // -> tải ảnh vào repo /assets và dùng "./assets/me.jpg" là chắc chắn.
     const PHOTOS = [
-      "https://drive.google.com/thumbnail?id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5&sz=w1600",
-      // 👇 THAY DÒNG NÀY bằng direct image link (ví dụ user-images...jpg/png)
-      "https://picsum.photos/seed/pookie/900/900"
+      "https://drive.google.com/thumbnail?id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5&sz=w2400"
     ];
     let photoIndex = 0;
 
     // particles (gọn)
-    let EMIT_RATE = 36;
-    let BURST_1 = 80;
-    let BURST_2 = 120;
-    const MAX_PARTICLES = 850;
+    let EMIT_RATE = 28;
+    let BURST_1 = 70;
+    let BURST_2 = 100;
+    const MAX_PARTICLES = 650;
 
     const GRAVITY = 760;
     const DRAG = 0.988;
@@ -312,7 +288,6 @@
     const photoPop = document.getElementById("photoPop");
     const userPhoto = document.getElementById("userPhoto");
 
-    // init photo
     userPhoto.src = PHOTOS[0];
 
     let DPR=1, W=0, H=0;
@@ -331,8 +306,8 @@
 
       const master = audioCtx.createGain();
       master.gain.setValueAtTime(0.0001, t0);
-      master.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
-      master.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.10);
+      master.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+      master.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.95);
       master.connect(audioCtx.destination);
 
       const freqs = [523.25, 659.25, 783.99];
@@ -344,8 +319,8 @@
         osc.frequency.setValueAtTime(f, t0 + i*0.06);
 
         gain.gain.setValueAtTime(0.0001, t0 + i*0.06);
-        gain.gain.exponentialRampToValueAtTime(0.18, t0 + i*0.06 + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.06 + 0.48);
+        gain.gain.exponentialRampToValueAtTime(0.14, t0 + i*0.06 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.06 + 0.40);
 
         filt.type = "lowpass";
         filt.frequency.setValueAtTime(2400, t0);
@@ -353,7 +328,7 @@
 
         osc.connect(filt); filt.connect(gain); gain.connect(master);
         osc.start(t0 + i*0.06);
-        osc.stop(t0 + i*0.06 + 0.55);
+        osc.stop(t0 + i*0.06 + 0.45);
       });
     }
 
@@ -377,6 +352,7 @@
       c.width=c.height=size;
       const g=c.getContext("2d");
       g.clearRect(0,0,size,size);
+
       const cx=size/2, cy=size/2;
       const s=size/36;
       g.save();
@@ -385,12 +361,9 @@
       g.translate(-16,-16);
 
       const grad=g.createLinearGradient(6,0,26,32);
-      grad.addColorStop(0,"rgba(255,140,170,0.95)");
-      grad.addColorStop(0.55,"rgba(255,45,85,0.95)");
-      grad.addColorStop(1,"rgba(165,0,40,0.95)");
-
-      g.shadowColor="rgba(0,0,0,.18)";
-      g.shadowBlur=6; g.shadowOffsetY=4;
+      grad.addColorStop(0,"rgba(255,140,170,0.92)");
+      grad.addColorStop(0.55,"rgba(255,45,85,0.92)");
+      grad.addColorStop(1,"rgba(165,0,40,0.92)");
 
       g.beginPath();
       g.moveTo(16,29);
@@ -401,14 +374,14 @@
       g.closePath();
       g.fillStyle=grad; g.fill();
 
-      g.shadowColor="transparent";
       const h=g.createRadialGradient(14,10,0,14,10,12);
-      h.addColorStop(0,"rgba(255,255,255,.5)");
+      h.addColorStop(0,"rgba(255,255,255,.45)");
       h.addColorStop(1,"rgba(255,255,255,0)");
       g.fillStyle=h;
       g.beginPath();
-      g.ellipse(13,11,6,5,-0.6,0,Math.PI*2);
+      g.ellipse(13, 11, 6, 5, -0.6, 0, Math.PI*2);
       g.fill();
+
       g.restore();
       return c;
     }
@@ -418,20 +391,20 @@
 
     function spawnOne(x,y){
       const p = (pCount<MAX_PARTICLES) ? (particles[pCount]={}) : particles[(Math.random()*MAX_PARTICLES)|0];
-      const angle = (-Math.PI/2) + (Math.random()-0.5)*0.80;
-      const speed = 210 + Math.random()*300;
+      const angle = (-Math.PI/2) + (Math.random()-0.5)*0.78;
+      const speed = 210 + Math.random()*270;
 
       p.x=x; p.y=y;
-      p.vx=Math.cos(angle)*speed + (Math.random()-0.5)*70;
-      p.vy=Math.sin(angle)*speed - Math.random()*110;
+      p.vx=Math.cos(angle)*speed + (Math.random()-0.5)*60;
+      p.vy=Math.sin(angle)*speed - Math.random()*95;
 
       p.rot=Math.random()*Math.PI*2;
-      p.vr=(Math.random()-0.5)*3.8;
+      p.vr=(Math.random()-0.5)*3.4;
 
       p.size=0.78 + Math.random()*1.05;
       p.life=0;
-      p.ttl=1.15 + Math.random()*1.05;
-      p.alpha=0.95;
+      p.ttl=1.10 + Math.random()*1.00;
+      p.alpha=0.92;
       p.sprite=sprites[(Math.random()*sprites.length)|0];
 
       if(pCount<MAX_PARTICLES) pCount++;
@@ -447,7 +420,7 @@
       }
     }
 
-    // 4D tilt (strong + smooth)
+    // 4D tilt
     const root = document.documentElement;
     let targetRx = 10, targetRy = -12, curRx = 10, curRy = -12;
     let targetLx = 35, targetLy = 22, curLx = 35, curLy = 22;
@@ -476,7 +449,6 @@
       root.style.setProperty("--ly", curLy.toFixed(2) + "%");
     }
 
-    // render loop
     function step(now){
       const dt=Math.min(0.035, (now-tPrev)/1000);
       tPrev=now;
@@ -495,7 +467,7 @@
 
       const vg=ctx.createRadialGradient(W*0.5,H*0.45,80,W*0.5,H*0.5,Math.max(W,H)*0.88);
       vg.addColorStop(0,"rgba(0,0,0,0)");
-      vg.addColorStop(1,"rgba(0,0,0,.26)");
+      vg.addColorStop(1,"rgba(0,0,0,.24)");
       ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
 
       for(let i=0;i<pCount;i++){
@@ -539,11 +511,10 @@
     // interaction
     let first=false;
 
-    // triple-click detector
     let clickCount = 0;
     let clickTimer = null;
 
-    function showNextPhoto(){
+    function showPhoto(){
       photoIndex = (photoIndex + 1) % PHOTOS.length;
       userPhoto.src = PHOTOS[photoIndex];
       photoPop.classList.add("active");
@@ -559,10 +530,10 @@
 
       if(clickCount === 3){
         clickCount = 0;
-        showNextPhoto();
+        showPhoto();
         const x=e?.clientX ?? W*0.5;
         const y=e?.clientY ?? H*0.5;
-        burst(x, y, 120);
+        burst(x, y, 110);
         return;
       }
 
@@ -577,7 +548,7 @@
         typewriter(TEXT, 32);
 
         burst(x,y,BURST_1);
-        burst(W*0.5,H*0.49,BURST_1+30);
+        burst(W*0.5,H*0.49,BURST_1+25);
       } else {
         burst(x,y,BURST_2);
       }
@@ -600,9 +571,8 @@
       if(k === "escape") photoPop.classList.remove("active");
     });
 
-    // ✅ giúp phát hiện lỗi ảnh (không làm click chết)
     userPhoto.addEventListener("error", () => {
-      console.warn("Photo failed to load. If using GitHub, use a DIRECT image URL (user-images...).");
+      console.warn("Ảnh không load. Nếu GitHub Pages chặn Drive, hãy bỏ ảnh vào /assets và dùng ./assets/tenanh.jpg");
     });
   })();
   </script>
