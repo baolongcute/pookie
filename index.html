@@ -163,30 +163,50 @@
       transform: translateY(0);
     }
     .love-line{
-      font-weight: 950;
-      font-size: clamp(34px, 6vw, 78px);
-      letter-spacing: .2px;
-      text-align:center;
-      padding: 0 18px;
+  font-weight: 950;
+  font-size: clamp(20px, 3.8vw, 48px);
+  letter-spacing: .2px;
+  text-align:center;
+  padding: 0 18px;
+  text-shadow: none;
+  position:relative;
+  display:inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
 
-      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.72));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+/* ✅ gradient CHỈ áp lên text thường */
+.love-line .grad{
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.72));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
-      text-shadow: none; /* ✅ no shadow */
-      position:relative;
-    }
-    .love-line::after{
-      content:"";
-      display:inline-block;
-      width: 10px;
-      height: 1em;
-      border-left: 3px solid rgba(255,255,255,.85);
-      margin-left: 10px;
-      transform: translateY(6px);
-      animation: blink .9s steps(2) infinite;
-    }
+/* ✅ emoji tách riêng, không bị transparent/clip */
+.love-line .emoji{
+  background: none !important;
+  color: #fff;
+  -webkit-text-fill-color: initial;
+  font-family:
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji",
+    system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.love-line::after{
+  content:"";
+  display:inline-block;
+  width: 10px;
+  height: 1em;
+  border-left: 3px solid rgba(255,255,255,.85);
+  margin-left: 10px;
+  transform: translateY(6px);
+  animation: blink .9s steps(2) infinite;
+}
     @keyframes blink { 50% { opacity: 0; } }
 
     /* Photo overlay */
@@ -300,8 +320,11 @@
   </div>
 
   <div class="love" id="love">
-    <div class="love-line" id="typed"></div>
+  <div class="love-line" id="typedWrap">
+    <span class="grad" id="typedText"></span>
+    <span class="emoji" id="typedEmoji"></span>
   </div>
+</div>
 
   <div class="photo-pop" id="photoPop" aria-hidden="true">
     <div class="frame">
@@ -348,7 +371,8 @@
     const ctx = canvas.getContext("2d", { alpha: true });
 
     const love = document.getElementById("love");
-    const typed = document.getElementById("typed");
+    const typedText  = document.getElementById("typedText");
+    const typedEmoji = document.getElementById("typedEmoji");
     const clicklayer = document.getElementById("clicklayer");
 
     const photoPop = document.getElementById("photoPop");
@@ -488,6 +512,31 @@
       }
     }
 
+    const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+
+function splitEmojiTail(str){
+  const arr = Array.from(str);
+  let tail = "";
+  // lấy emoji ở CUỐI chuỗi (case "Moah😘")
+  while(arr.length && /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u.test(arr[arr.length-1])){
+    tail = arr.pop() + tail;
+  }
+  return [arr.join(""), tail];
+}
+
+async function typewriter(text, ms=34){
+  typedText.textContent = "";
+  typedEmoji.textContent = "";
+
+  const [plain, emo] = splitEmojiTail(text);
+
+  for(const ch of Array.from(plain)){
+    typedText.textContent += ch;
+    await sleep(ms);
+  }
+  // emoji hiện chuẩn, không bị clip
+  typedEmoji.textContent = emo;
+}
     // 4D tilt (smooth)
     const root = document.documentElement;
     let targetRx = 10, targetRy = -12, curRx = 10, curRy = -12;
@@ -641,6 +690,3 @@
   </script>
 </body>
 </html>
-
-
-
