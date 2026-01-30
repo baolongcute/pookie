@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Plush 4D Heart — No Shadow</title>
+  <title>Plush 4D Heart — No Shadow + Text Ring</title>
 
   <style>
     :root{
@@ -52,7 +52,7 @@
       pointer-events:none;
     }
 
-    /* OPTIONAL: nếu bạn cũng muốn tắt glow nền tròn, set display:none */
+    /* nền glow tròn (không phải shadow). Muốn tắt thì display:none */
     .aura{
       position:absolute;
       width:min(560px, 84vmin);
@@ -78,13 +78,53 @@
       transform-style:preserve-3d;
     }
 
+    /* ===== TEXT RING (bao quanh trái tim) ===== */
+    .ring-wrap{
+      position:absolute;
+      inset:-2%;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+      animation: ringBob 6.8s ease-in-out infinite;
+    }
+    @keyframes ringBob{
+      0%,100%{ transform: translateY(2px); }
+      50%{ transform: translateY(-4px); }
+    }
+
+    .ring{
+      width:100%;
+      height:100%;
+      overflow:visible;
+      transform-origin: 50% 50%;
+      animation: ringSpin 22s linear infinite;
+      opacity: .9;
+    }
+    /* "tự nhiên": thay đổi tốc độ nhẹ theo đoạn */
+    @keyframes ringSpin{
+      0%   { transform: rotate(0deg); }
+      18%  { transform: rotate(78deg); }
+      38%  { transform: rotate(168deg); }
+      62%  { transform: rotate(252deg); }
+      82%  { transform: rotate(326deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .ring text{
+      font-weight: 800;
+      font-size: 26px;          /* chỉnh to/nhỏ ở đây */
+      letter-spacing: 2px;      /* chỉnh độ “khít” thị giác */
+      fill: rgba(255,255,255,.62);
+    }
+
     /* Main heart (NO SHADOW) */
     .heart{
       width:min(360px, 66vmin);
       height:auto;
       transform-style: preserve-3d;
       transform: rotateX(var(--rx)) rotateY(var(--ry));
-      filter:none !important; /* ✅ no drop-shadow */
+      filter:none !important;
+      overflow: visible; /* tránh clip nếu browser khó tính */
     }
 
     /* Depth stack (NO SHADOW) */
@@ -94,8 +134,9 @@
       height:auto;
       transform-style:preserve-3d;
       transform: rotateX(var(--rx)) rotateY(var(--ry));
-      opacity:.32;
-      filter:none !important; /* ✅ no blur/shadow */
+      opacity:.30;
+      filter:none !important;
+      overflow: visible;
     }
     .layer{
       position:absolute;
@@ -105,7 +146,7 @@
       filter: saturate(1.08) contrast(1.03);
     }
 
-    /* Text */
+    /* Text center */
     .love{
       position:fixed;
       inset:0;
@@ -133,9 +174,7 @@
       background-clip: text;
       color: transparent;
 
-      text-shadow:
-        0 12px 40px rgba(0,0,0,.35),
-        0 0 36px rgba(255,45,85,.18);
+      text-shadow: none; /* ✅ no shadow */
       position:relative;
     }
     .love-line::after{
@@ -150,7 +189,7 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Photo overlay (bạn có thể tắt khung nền ở đây) */
+    /* Photo overlay */
     .photo-pop{
       position:fixed;
       inset:0;
@@ -169,12 +208,10 @@
     .photo-pop .frame{
       border-radius: 28px;
       padding: 10px;
-
-      /* ✅ bỏ khung/nền trắng: set transparent + border none */
       background: transparent;
       border: none;
       backdrop-filter: none;
-      box-shadow: none;
+      box-shadow: none; /* ✅ no shadow */
     }
     .photo-pop img{
       display:block;
@@ -197,11 +234,37 @@
 <body>
   <canvas id="fx"></canvas>
 
+  <!-- ✅ define symbol sớm để mọi <use href="#H"> dùng ổn -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <!-- Classic heart: đít nhọn, không “cụt” -->
+      <symbol id="H" viewBox="0 0 512 512">
+        <path d="M256 471s-26-16-54-37c-78-58-154-126-154-217C48 128 112 72 184 72c40 0 70 18 72 20s32-20 72-20c72 0 136 56 136 145 0 91-76 159-154 217-28 21-54 37-54 37z"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <div class="stage" aria-hidden="true">
     <div class="aura"></div>
 
     <div class="heart-wrap">
-      <!-- subtle thickness stack (no shadow) -->
+
+      <!-- ===== Vòng chữ bao quanh trái tim ===== -->
+      <div class="ring-wrap" aria-hidden="true">
+        <svg class="ring" viewBox="0 0 512 512">
+          <defs>
+            <!-- r sẽ đồng bộ với JS (RING_R) -->
+            <path id="ringPath"
+              d="M256 256 m -228,0 a 228,228 0 1,1 456,0 a 228,228 0 1,1 -456,0" />
+          </defs>
+
+          <text>
+            <textPath id="ringTextPath" href="#ringPath" startOffset="0%"></textPath>
+          </text>
+        </svg>
+      </div>
+
+      <!-- subtle thickness stack -->
       <div class="heart-stack" aria-hidden="true">
         <svg class="layer" style="--z:-22px; --o:.10" viewBox="0 0 512 512"><use href="#H"></use></svg>
         <svg class="layer" style="--z:-14px; --o:.12" viewBox="0 0 512 512"><use href="#H"></use></svg>
@@ -217,26 +280,18 @@
             <stop offset="1" stop-color="#7a001c"/>
           </radialGradient>
 
-          <!-- gloss highlight follows pointer -->
           <radialGradient id="gloss" cx="var(--lx)" cy="var(--ly)" r="60%">
             <stop offset="0" stop-color="rgba(255,255,255,0.78)"/>
             <stop offset="0.22" stop-color="rgba(255,255,255,0.30)"/>
             <stop offset="0.55" stop-color="rgba(255,255,255,0.09)"/>
             <stop offset="1" stop-color="rgba(255,255,255,0)"/>
           </radialGradient>
-
-          <!-- Heart symbol -->
-          <symbol id="H" viewBox="0 0 512 512">
-            <path d="M256 468s-36-22-76-54C108 358 48 296 48 206 48 128 109 72 186 72c44 0 77 20 90 41 13-21 46-41 90-41 77 0 138 56 138 134 0 90-60 152-132 208-40 32-76 55-76 55z"/>
-          </symbol>
         </defs>
 
-        <!-- ✅ NO glow, NO innerShadow, NO rim -->
         <g>
           <use href="#H" fill="url(#base)"></use>
           <use href="#H" fill="url(#gloss)" opacity="0.92"></use>
 
-          <!-- wet streak -->
           <path d="M170 160c20-52 78-80 126-58 16 7 32 22 37 39 7 24-3 50-27 62-21 11-49 6-67-13-12-13-22-22-36-33-16-12-35-8-33 3z"
             fill="rgba(255,255,255,0.18)" opacity="0.9"/>
         </g>
@@ -258,17 +313,28 @@
 
   <script>
   (() => {
-    const TEXT = "I luv youu, Pookie";
+    const TEXT = "Moah";
 
-    // ✅ Ảnh của bạn (Drive thumbnail). Nhớ Share: Anyone with the link
-    // Nếu GitHub Pages vẫn không hiện vì Drive chặn hotlink:
-    // -> tải ảnh vào repo /assets và dùng "./assets/me.jpg" là chắc chắn.
+    // ===== vòng chữ =====
+    const RING_BASE = "I luv youu, Pookie💕";
+    const RING_REPEAT = 8;     // x3/x4 muốn dày hơn thì tăng số này
+    const RING_R = 228;        // bán kính vòng chữ (khít hơn -> giảm nhẹ)
+
+    const ringTextPath = document.getElementById("ringTextPath");
+    ringTextPath.textContent = RING_BASE.repeat(RING_REPEAT);
+
+    // ép chữ “khít” đúng chu vi vòng tròn
+    const circumference = 2 * Math.PI * RING_R;
+    ringTextPath.setAttribute("textLength", String(Math.round(circumference)));
+    ringTextPath.setAttribute("lengthAdjust", "spacingAndGlyphs");
+
+    // ===== Ảnh (Drive thumbnail) =====
     const PHOTOS = [
       "https://drive.google.com/thumbnail?id=1XoVSocFErL3JrKDz2BmdXwN4sFz0twu5&sz=w2400"
     ];
     let photoIndex = 0;
 
-    // particles (gọn)
+    // particles
     let EMIT_RATE = 28;
     let BURST_1 = 70;
     let BURST_2 = 100;
@@ -288,6 +354,8 @@
     const photoPop = document.getElementById("photoPop");
     const userPhoto = document.getElementById("userPhoto");
 
+    // preload ảnh
+    PHOTOS.forEach(u => { const im = new Image(); im.src = u; });
     userPhoto.src = PHOTOS[0];
 
     let DPR=1, W=0, H=0;
@@ -345,7 +413,7 @@
     window.addEventListener("resize", resize);
     resize();
 
-    // heart sprite
+    // heart sprite (no shadow)
     const sprites=[];
     function makeHeartSprite(size){
       const c=document.createElement("canvas");
@@ -420,7 +488,7 @@
       }
     }
 
-    // 4D tilt
+    // 4D tilt (smooth)
     const root = document.documentElement;
     let targetRx = 10, targetRy = -12, curRx = 10, curRy = -12;
     let targetLx = 35, targetLy = 22, curLx = 35, curLy = 22;
@@ -508,15 +576,16 @@
     }
     requestAnimationFrame(step);
 
-    // interaction
+    // interaction (triple click trong 900ms)
     let first=false;
-
     let clickCount = 0;
     let clickTimer = null;
 
     function showPhoto(){
-      photoIndex = (photoIndex + 1) % PHOTOS.length;
+      if(!PHOTOS.length) return;
       userPhoto.src = PHOTOS[photoIndex];
+      photoIndex = (photoIndex + 1) % PHOTOS.length;
+
       photoPop.classList.add("active");
       setTimeout(() => photoPop.classList.remove("active"), 3500);
     }
@@ -528,17 +597,15 @@
       clearTimeout(clickTimer);
       clickTimer = setTimeout(() => (clickCount = 0), 900);
 
+      const x=e?.clientX ?? W*0.5;
+      const y=e?.clientY ?? H*0.5;
+
       if(clickCount === 3){
         clickCount = 0;
         showPhoto();
-        const x=e?.clientX ?? W*0.5;
-        const y=e?.clientY ?? H*0.5;
         burst(x, y, 110);
         return;
       }
-
-      const x=e?.clientX ?? W*0.5;
-      const y=e?.clientY ?? H*0.5;
 
       if(!first){
         first=true;
@@ -569,10 +636,6 @@
       const k = ev.key.toLowerCase();
       if(k === "r") reset();
       if(k === "escape") photoPop.classList.remove("active");
-    });
-
-    userPhoto.addEventListener("error", () => {
-      console.warn("Ảnh không load. Nếu GitHub Pages chặn Drive, hãy bỏ ảnh vào /assets và dùng ./assets/tenanh.jpg");
     });
   })();
   </script>
